@@ -1,5 +1,8 @@
 # ⚡ Blazingly FAST Line Counter
 
+![GitHub License](https://img.shields.io/github/license/Moderrek/lines)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Moderrek/lines/total)
+
 Fast command-line [concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) non-blank line counter implemented in [GO](https://go.dev/) using [lightweight execution threads]().
 
 ## ⚙️ Usage
