@@ -1,8 +1,14 @@
+
+
 <div align="center">
 
-   #⚡ Blazingly FAST Line Counter
+
+
+   # ⚡ Blazingly FAST Line Counter
+   
    ![GitHub License](https://img.shields.io/github/license/Moderrek/lines)
    ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Moderrek/lines/total)
+
 
 </div>
 
