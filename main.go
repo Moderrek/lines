@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -11,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	color "github.com/fatih/color"
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
@@ -20,6 +20,7 @@ var options struct {
 	help    bool
 	hidden  bool
 	top     uint
+	noColor bool
 }
 
 var workers sync.WaitGroup
@@ -54,7 +55,8 @@ var notAllowedDirs = map[string]bool{
 func countNonBlankLines(path string) int {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err)
+		c := color.New(color.FgRed)
+		c.Println(err)
 		return 0
 	}
 	defer file.Close()
@@ -82,7 +84,8 @@ func countNonBlankLines(path string) int {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Printf("Failed to count lines %s: %s\n", path, err)
+		c := color.New(color.FgRed)
+		c.Printf("Failed to count lines %s: %s\n", path, err)
 	}
 
 	return line_counter
@@ -156,31 +159,41 @@ func main() {
 	flag.BoolVar(&options.help, "help", false, "Print the help message and exit")
 	flag.BoolVar(&options.hidden, "hidden", false, "Allows to analize hidden files")
 	flag.UintVar(&options.top, "top", 0, "Print the top N files")
+	flag.BoolVar(&options.noColor, "no-color", false, "Disable color output")
 
 	flag.Parse()
 
+	// If the no-color flag is set, disable color output
+	if options.noColor {
+		color.NoColor = true
+	}
+
 	// If the version flag is set, print the version and exit
 	if options.version {
-		fmt.Println("Lines installed version 1.0.0")
+		c := color.New(color.FgGreen)
+		c.Println("Lines version 1.0.1 created by @Moderrek")
 		return
 	}
 
 	// If the help flag is set, print the help message and exit
 	if options.help {
-		fmt.Println("Usage: lines [options]")
+		c := color.New(color.FgYellow)
+		c.Println("Usage: lines [options]")
 		flag.PrintDefaults()
 		return
 	}
 
 	if _, err := os.Stat(options.dir); os.IsNotExist(err) {
-		fmt.Printf("Directory %s does not exist\n", options.dir)
+		c := color.New(color.FgRed)
+		c.Printf("Directory %s does not exist\n", options.dir)
 		return
 	}
 
 	// Get current time. Will be used to calculate the time taken to analyze files
 	startTime := time.Now()
 
-	fmt.Printf("Analyzing.. %s\n\n", options.dir)
+	c := color.New(color.FgYellow)
+	c.Printf("Analyzing.. %s\n\n", options.dir)
 
 	// Start the analysis
 	workers.Add(1)
@@ -209,13 +222,15 @@ func main() {
 			if counter >= options.top {
 				break
 			}
-			counter++
 		}
+		counter++
 		var lines int = lineMap[key]
 		if lines == 0 {
 			continue
 		}
-		fmt.Printf("%s | Lines of code: %d\n", key, lines)
+		c := color.New(color.Bold)
+		c.Printf("%d. %s | Lines of code: %d\n", counter, key, lines)
 	}
-	fmt.Printf("\nTime taken: %v to analyze files\n", time.Since(startTime))
+	success := color.New(color.FgGreen)
+	success.Printf("\nTime taken: %v to analyze files\n", time.Since(startTime))
 }

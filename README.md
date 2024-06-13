@@ -13,17 +13,18 @@
 </div>
 
 
-Fast command-line [concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) non-blank line counter implemented in [GO](https://go.dev/) using [lightweight execution threads]().
+Fast command-line [concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) **non-blank** line counter implemented in [GO](https://go.dev/) using [lightweight execution threads]().
 
 ## ⚙️ Usage
 
 ```shell
-lines           # Prints file with the most lines at current directory
-lines --dir     # Path to the analysis folder
-lines --top N   # Prints the top N files
-lines --hidden  # Allow to analyze hidden files & dirs
-lines --version # Prints installed version
-lines --help    # Prints help
+lines            # Prints file with the most lines at current directory
+lines --dir      # Path to the analysis folder
+lines --top N    # Prints the top N files
+lines --hidden   # Allow to analyze hidden files & dirs
+lines --version  # Prints installed version
+lines --help     # Prints help
+lines --no-color # Disables colored standard output
 ```
 
 ### 📈 Example output
@@ -53,7 +54,7 @@ Time taken: 27.157ms to analyze 79 635 files
 Requires
 
 - Installed [Git](https://www.git-scm.com/downloads)
-- Installed [Go](https://go.dev/doc/install)
+- Installed [GO](https://go.dev/doc/install)
 
 Steps
 1. Clone repository
