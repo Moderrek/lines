@@ -7,6 +7,7 @@
    # ⚡ Blazingly FAST Line Counter
    
    ![GitHub License](https://img.shields.io/github/license/Moderrek/lines)
+   [![Go](https://github.com/Moderrek/lines/actions/workflows/go.yml/badge.svg)](https://github.com/Moderrek/lines/actions/workflows/go.yml)
    ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Moderrek/lines/total)
 
 
