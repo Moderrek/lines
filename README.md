@@ -13,7 +13,7 @@
 </div>
 
 
-Fast command-line [concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) **non-blank** line counter implemented in [GO](https://go.dev/) using [lightweight execution threads]().
+Fast command-line [concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) **non-blank** line counter implemented in [GO](https://go.dev/) using [lightweight execution threads](https://go.dev/tour/concurrency/1).
 
 ## ⚙️ Usage
 
