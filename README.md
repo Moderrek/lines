@@ -13,8 +13,14 @@
 
 </div>
 
+Blazing-fast concurrent line counter for developers who value speed and efficiency. 🚀  
+[Concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) **non-blank** line counter implemented in [GO](https://go.dev/) using [lightweight execution threads](https://go.dev/tour/concurrency/1).
 
-Fast command-line [concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) **non-blank** line counter implemented in [GO](https://go.dev/) using [lightweight execution threads](https://go.dev/tour/concurrency/1).
+## 🚀 Why Lines?
+
+- **Speed**: Processes large directories with tens of thousands of files in milliseconds.
+- **Concurrency**: Takes full advantage of modern CPUs with Go's goroutines.
+- **Precision**: Counts only **non-blank** lines for accurate metrics.
 
 ## ⚙️ Usage
 
