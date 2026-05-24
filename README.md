@@ -13,88 +13,145 @@
 
 </div>
 
-Blazing-fast concurrent line counter for developers who value speed and efficiency. 🚀  
-[Concurrent](https://en.wikipedia.org/wiki/Concurrent_computing) **non-blank** line counter implemented in [GO](https://go.dev/) using [lightweight execution threads](https://go.dev/tour/concurrency/1).
+A concurrent, non-blank line counter for source code directories, written in GO.
 
-## 🚀 Why Lines?
+It recursively walks a directory, concurrently analyzes files, and reports the number of non-blank lines of code, grouped by file extension.
 
-- **Speed**: Processes large directories with tens of thousands of files in milliseconds.
-- **Concurrency**: Takes full advantage of modern CPUs with Go's goroutines.
-- **Precision**: Counts only **non-blank** lines for accurate metrics.
+The tool is designed for performance, utilizing goroutines to process files in parallel.
 
-## ⚙️ Usage
+## Installation
+
+To install the `lines` command-line tool, ensure you have [Go](https://go.dev/doc/install) installed and configured, then run:
 
 ```shell
-lines            # Prints file with the most lines at current directory
-lines --dir      # Path to the analysis folder
-lines --top N    # Prints the top N files
-lines --hidden   # Allow to analyze hidden files & dirs
-lines --version  # Prints installed version
-lines --help     # Prints help
-lines --no-color # Disables colored standard output
+go install github.com/moderrek/lines/cmd/lines@latest
 ```
 
-### 📈 Example output
+This will download the source, compile it, and place the `lines` binary in your Go bin directory (`$GOPATH/bin` or `$HOME/go/in`).
 
-```bat
-lines --dir C:\Users\Moderr\dev --top 5
+## Usage
+
+The `lines` command accepts the following flags:
+
+```
+Usage: lines [options]
+
+Options:
+  -dir string
+        The directory to analyze (default ".")
+  -hidden
+        Include hidden files and directories in the analysis
+  -top uint
+        Show only the top N extensions by line count
+  -no-color
+        Disable colorized output
+  -json
+        Output results in JSON format
+  -version
+        Print version information and exit
+  -help
+        Show this help message and exit
 ```
 
-```out
-Analyzing.. C:\Users\Moderr\dev
+### Example
 
-.java | Lines of code: 24409
-.json | Lines of code: 8828
-.yaml | Lines of code: 4980
-.tsx | Lines of code: 4357
-.yml | Lines of code: 1122
+To analyze the directory `~/projects/my-app` and display the top 5 extensions:
 
-Time taken: 27.157ms to analyze 79 635 files
+```shell
+lines --dir ~/projects/my-app --top 5
 ```
 
-## 📸 Screenshots
+To get the output in JSON format, which can be piped to other tools like `jq`:
 
-![Example Usage](/images/ss.png)
+```shell
+lines --dir ~/projects/my-app --json
+```
 
-## 🖥️ Quick Start
+Example output (`--json`):
+```json
+{
+  ".css": 1122,
+  ".go": 15230,
+  ".html": 4357,
+  ".js": 8828,
+  ".mod": 4980
+}
+```
 
-Requires
+## Library Usage
 
-- Installed [Git](https://www.git-scm.com/downloads)
-- Installed [GO](https://go.dev/doc/install)
+The core counting logic is available as a library.
+It can be imported into other Go projects.
 
-Steps
-1. Clone repository
+```go
+import "github.com/moderrek/lines/pkg/lines"
+```
+
+### Example
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/moderrek/lines/pkg/lines"
+)
+
+func main() {
+	// Configure the counter with default settings.
+	config := lines.Config{
+		IncludeHidden: false,
+	}
+	counter := lines.NewCounter(config)
+
+	// Run the analysis on the current directory.
+	result, err := counter.Run(".")
+	if err != nil {
+		log.Fatalf("Analysis failed: %v", err)
+	}
+
+	// Print results.
+	for ext, count := range result.LinesByExtension {
+		fmt.Printf("Extension: %s, Lines: %d\n", ext, count)
+	}
+}
+```
+
+### Custom Configuration
+
+You can customize which directories and file extensions to ignore:
+
+```go
+config := lines.Config{
+	IncludeHidden: false,
+	IgnoredDirs: []string{"node_modules", "vendor", ".git", "target", "dist"},
+	IgnoredExtensions: []string{".exe", ".dll", ".jpg", ".png"},
+}
+counter := lines.NewCounter(config)
+result, err := counter.Run("./src")
+```
+
+If `IgnoredDirs` or `IgnoredExtensions` are not provided, the library uses sensible defaults.
+
+## Building from Source
+
+1. Clone the repository:
    ```shell
-   git clone https://github.com/Moderrek/lines
+   git clone https://github.com/Moderrek/lines.git
    ```
-2. Run
+2. Navigate to the project directory:
    ```shell
-   go run main.go
+   cd lines
    ```
+3. Build the binary:
+   ```shell
+   go build ./cmd/lines
+   ```
+   This will create a `lines` executable in the current directory.
 
-## © License
+## License
 
-```license
-MIT License
-
-Copyright (c) 2024 Tymon Woźniak
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
