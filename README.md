@@ -80,7 +80,7 @@ Example output (`--json`):
 
 ## Library Usage
 
-The core couting logic is available as a library.
+The core counting logic is available as a library.
 It can be imported into other Go projects.
 
 ```go
@@ -93,31 +93,48 @@ import "github.com/moderrek/lines/pkg/lines"
 package main
 
 import (
-   "fmt"
-   "log"
+	"fmt"
+	"log"
 
-   "github.com/moderrek/lines/pkg/lines"
+	"github.com/moderrek/lines/pkg/lines"
 )
 
 func main() {
-   // Configure the counter.
-   config := lines.Config{
-     IncludeHidden: false,
-   }
-   counter := lines.NewCounter(config)
+	// Configure the counter with default settings.
+	config := lines.Config{
+		IncludeHidden: false,
+	}
+	counter := lines.NewCounter(config)
 
-   // Run the analysis on the current directory.
-   result, err := counter.Run(".")
-   if err != nil {
-     log.Fatalf("Analysis failed: %v", err)
-   }
+	// Run the analysis on the current directory.
+	result, err := counter.Run(".")
+	if err != nil {
+		log.Fatalf("Analysis failed: %v", err)
+	}
 
-   // Print results.
-   for ext, count := range result.LinesByExtension {
-     fmt.Printf("Extension: %s, Lines: %d\n", ext, count)
-   }
+	// Print results.
+	for ext, count := range result.LinesByExtension {
+		fmt.Printf("Extension: %s, Lines: %d\n", ext, count)
+	}
 }
 ```
+
+### Custom Configuration
+
+You can customize which directories and file extensions to ignore:
+
+```go
+config := lines.Config{
+	IncludeHidden: false,
+	IgnoredDirs: []string{"node_modules", "vendor", ".git", "target", "dist"},
+	IgnoredExtensions: []string{".exe", ".dll", ".jpg", ".png"},
+}
+counter := lines.NewCounter(config)
+result, err := counter.Run("./src")
+```
+
+If `IgnoredDirs` or `IgnoredExtensions` are not provided, the library uses sensible defaults.
+
 ## Building from Source
 
 1. Clone the repository:

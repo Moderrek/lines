@@ -11,53 +11,113 @@ import (
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
+// Config holds settings for the line counting process.
 type Config struct {
+	// IncludeHidden analyzes hidden files and directories (starting with '.').
 	IncludeHidden bool
+	// IgnoredDirs are directories to skip during analysis. Defaults to ["node_modules", "vendor", ".git", "target"].
+	IgnoredDirs []string
+	// IgnoredExtensions are file extensions to skip. Defaults to common binary and media formats.
+	IgnoredExtensions []string
+	// BufferInitialSize is the initial buffer size for the scanner. Defaults to 64KB.
+	BufferInitialSize int
+	// BufferMaxSize is the maximum buffer size for the scanner. Defaults to 1MB.
+	BufferMaxSize int
 }
 
+// Represents the results of the line counting process.
 type Result struct {
+	// LinesByExtension maps file extensions to their total line counts.
 	LinesByExtension map[string]int
 }
 
+// Counter analyzes directories and counts non-blank lines of code.
+// NOTE: Counter is safe for concurrent use and uses goroutines internally.
 type Counter struct {
-	config               Config
-	lines                cmap.ConcurrentMap[string, int]
-	workers              sync.WaitGroup
-	notAllowedDirs       map[string]bool
-	notAllowedExtensions map[string]bool
+	config  Config
+	lines   cmap.ConcurrentMap[string, int]
+	workers sync.WaitGroup
 }
 
+// NewCounter creates a new Counter with the given configuration.
+// If IgnoredDirs or IgnoredExtensions are empty, sensible defaults are used.
 func NewCounter(config Config) *Counter {
+	// Use sensible defaults if lists are empty.
+	if len(config.IgnoredDirs) == 0 {
+		config.IgnoredDirs = defaultIgnoredDirs()
+	}
+	if len(config.IgnoredExtensions) == 0 {
+		config.IgnoredExtensions = defaultIgnoredExtensions()
+	}
+	if config.BufferInitialSize == 0 {
+		config.BufferInitialSize = 64 * 1024
+	}
+	if config.BufferMaxSize == 0 {
+		config.BufferMaxSize = 1024 * 1024
+	}
+
 	return &Counter{
 		config: config,
 		lines:  cmap.New[int](),
-		notAllowedDirs: map[string]bool{
-			"node_modules": true, "vendor": true, ".git": true, "target": true,
-		},
-		notAllowedExtensions: map[string]bool{
-			".exe": true, ".dll": true, ".so": true, ".dylib": true,
-			".zip": true, ".tar": true, ".gz": true, ".bz2": true, ".xz": true,
-			".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".bmp": true, ".webp": true, ".svg": true, ".ico": true,
-			".mp3": true, ".wav": true, ".flac": true, ".ogg": true, ".aac": true,
-			".mp4": true, ".mkv": true, ".avi": true, ".mov": true, ".wmv": true,
-			".pdf": true, ".doc": true, ".docx": true, ".xls": true, ".xlsx": true,
-			".icns": true, ".ttf": true, ".otf": true, ".woff": true, ".woff2": true,
-			".eot": true, ".svgz": true, ".uasset": true, ".plist": true,
-			".url": true, ".pbxproj": true, ".sln": true,
-			".vcxproj": true, ".csproj": true, ".vcproj": true, ".tlog": true,
-			".tmp": true, ".filters": true, ".idb": true, ".lock": true, ".rc": true,
-			".sqlite": true, ".gdb": true, ".node": true, ".rmeta": true,
-			".rlib": true, ".mcmeta": true, ".iml": true, ".map": true, ".natvis": true,
-			".d": true, ".dat_old": true, ".storyboard": true, ".ilk": true, ".ppt": true,
-			".pptx": true, ".odt": true, ".ods": true, ".odp": true, ".odg": true, ".mca": true,
-			".psd": true, ".bin": true, ".jar": true, ".pdb": true, ".dox": true, ".db": true,
-			".schem": true, ".lnk": true, ".mod": true, ".lib": true, ".o": true, ".obj": true,
-			".a": true, ".class": true, ".pyc": true, ".pyo": true, ".whl": true, ".log": true,
-			".in": true, "idb": true, ".dat": true, ".TAG": true, ".repositories": true, ".MF": true,
-		},
 	}
 }
 
+// defaultIgnoredDirs returns default directories to ignore.
+func defaultIgnoredDirs() []string {
+	return []string{
+		"node_modules", "vendor", ".git", "target",
+	}
+}
+
+// defaultIgnoredExtensions returns default file extensions to ignore.
+func defaultIgnoredExtensions() []string {
+	return []string{
+		".exe", ".dll", ".so", ".dylib",
+		".zip", ".tar", ".gz", ".bz2", ".xz",
+		".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".ico",
+		".mp3", ".wav", ".flac", ".ogg", ".aac",
+		".mp4", ".mkv", ".avi", ".mov", ".wmv",
+		".pdf", ".doc", ".docx", ".xls", ".xlsx",
+		".icns", ".ttf", ".otf", ".woff", ".woff2",
+		".eot", ".svgz", ".uasset", ".plist",
+		".url", ".pbxproj", ".sln",
+		".vcxproj", ".csproj", ".vcproj", ".tlog",
+		".tmp", ".filters", ".idb", ".lock", ".rc",
+		".sqlite", ".gdb", ".node", ".rmeta",
+		".rlib", ".mcmeta", ".iml", ".map", ".natvis",
+		".d", ".dat_old", ".storyboard", ".ilk", ".ppt",
+		".pptx", ".odt", ".ods", ".odp", ".odg", ".mca",
+		".psd", ".bin", ".jar", ".pdb", ".dox", ".db",
+		".schem", ".lnk", ".mod", ".lib", ".o", ".obj",
+		".a", ".class", ".pyc", ".pyo", ".whl", ".log",
+		".in", ".dat", ".TAG", ".repositories", ".MF",
+	}
+}
+
+// isIgnoredDir checks if a directory should be ignored.
+func (c *Counter) isIgnoredDir(dirname string) bool {
+	for _, ignored := range c.config.IgnoredDirs {
+		if dirname == ignored {
+			return true
+		}
+	}
+	return false
+}
+
+// isIgnoredExtension checks if a file extension should be ignored.
+// The comparison is case-insensitive.
+func (c *Counter) isIgnoredExtension(ext string) bool {
+	ext = strings.ToLower(ext)
+	for _, ignored := range c.config.IgnoredExtensions {
+		if ext == strings.ToLower(ignored) {
+			return true
+		}
+	}
+	return false
+}
+
+// Run analyzes the given directory and returns the results.
+// It recursively walks the directory tree using goroutines for performance.
 func (c *Counter) Run(dir string) (*Result, error) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return nil, fmt.Errorf("directory '%s' does not exist", dir)
@@ -73,11 +133,14 @@ func (c *Counter) Run(dir string) (*Result, error) {
 	return result, nil
 }
 
+// walkDir recursively walks the directory tree and counts lines in files.
+// It spawns goroutines for each subdirectory to achieve parallel processing.
 func (c *Counter) walkDir(dir string) {
 	defer c.workers.Done()
 
 	visit := func(path string, f os.FileInfo, err error) error {
 		if err != nil {
+			// NOTE: Log access errors but continue with other directories.
 			fmt.Fprintf(os.Stderr, "ERROR: cannot access path %q: %v\n", path, err)
 			return err
 		}
@@ -86,7 +149,7 @@ func (c *Counter) walkDir(dir string) {
 			if !c.config.IncludeHidden && dirname[0] == '.' {
 				return filepath.SkipDir
 			}
-			if _, ok := c.notAllowedDirs[dirname]; ok {
+			if c.isIgnoredDir(dirname) {
 				return filepath.SkipDir
 			}
 			c.workers.Add(1)
@@ -103,6 +166,9 @@ func (c *Counter) walkDir(dir string) {
 	filepath.Walk(dir, visit)
 }
 
+// needToAnalyze determines if a file should be analyzed.
+// Returns false if the file is hidden (when IncludeHidden is false),
+// has no extension, or has an ignored extension.
 func (c *Counter) needToAnalyze(path string) bool {
 	if !c.config.IncludeHidden && filepath.Base(path)[0] == '.' {
 		return false
@@ -111,20 +177,23 @@ func (c *Counter) needToAnalyze(path string) bool {
 	if len(extension) == 0 {
 		return false
 	}
-	if _, ok := c.notAllowedExtensions[extension]; ok {
+	if c.isIgnoredExtension(extension) {
 		return false
 	}
 	return true
 }
 
+// fastLineCounter counts non-blank lines in a file and updates results.
+// TODO: Consider caching results for frequently accessed files.
 func (c *Counter) fastLineCounter(path string) {
-	extension := filepath.Ext(path)
+	extension := strings.ToLower(filepath.Ext(path))
 	c.workers.Add(1)
 	go func() {
 		defer c.workers.Done()
-		countedLines, err := countNonBlankLines(path)
+		countedLines, err := countNonBlankLines(path, c.config.BufferInitialSize, c.config.BufferMaxSize)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "ERROR: cannot count lines in file %q: %v\n", path, err)
+			// NOTE: Silently skip files with read/encoding issues.
+			fmt.Fprintf(os.Stderr, "WARNING: failed to count lines in %q: %v\n", path, err)
 			return
 		}
 		if countedLines > 0 {
@@ -138,7 +207,11 @@ func (c *Counter) fastLineCounter(path string) {
 	}()
 }
 
-func countNonBlankLines(path string) (int, error) {
+// countNonBlankLines reads a file and counts non-blank, non-comment lines.
+// Lines starting with '//' or '#' are treated as comments and skipped.
+// bufferInitialSize specifies the initial scanner buffer size.
+// bufferMaxSize specifies the maximum scanner buffer size.
+func countNonBlankLines(path string, bufferInitialSize, bufferMaxSize int) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return 0, err
@@ -146,18 +219,18 @@ func countNonBlankLines(path string) (int, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	buffer := make([]byte, 0, 64*1024)
-	scanner.Buffer(buffer, 1024*1024)
+	buffer := make([]byte, 0, bufferInitialSize)
+	scanner.Buffer(buffer, bufferMaxSize)
 
 	lineCounter := 0
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
-		// Skip empty lines
+		// Skip empty lines.
 		if line == "" {
 			continue
 		}
-		// Skip comment lines (common in many programming languages)
+		// Skip comment lines: //, #, or --.
 		if strings.HasPrefix(line, "//") || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "--") {
 			continue
 		}
