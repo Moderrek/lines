@@ -2,6 +2,7 @@ package lines
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,11 +60,11 @@ func NewCounter(config Config) *Counter {
 
 func (c *Counter) Run(dir string) (*Result, error) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		return nil, err
+		return nil, fmt.Errorf("directory '%s' does not exist", dir)
 	}
 
 	c.workers.Add(1)
-	c.walkDir(dir)
+	go c.walkDir(dir)
 	c.workers.Wait()
 
 	result := &Result{
@@ -77,6 +78,7 @@ func (c *Counter) walkDir(dir string) {
 
 	visit := func(path string, f os.FileInfo, err error) error {
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR: cannot access path %q: %v\n", path, err)
 			return err
 		}
 		if f.IsDir() && path != dir {
@@ -120,7 +122,11 @@ func (c *Counter) fastLineCounter(path string) {
 	c.workers.Add(1)
 	go func() {
 		defer c.workers.Done()
-		countedLines := countNonBlankLines(path)
+		countedLines, err := countNonBlankLines(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR: cannot count lines in file %q: %v\n", path, err)
+			return
+		}
 		if countedLines > 0 {
 			c.lines.Upsert(extension, countedLines, func(exists bool, valueInMap int, newValue int) int {
 				if exists {
@@ -132,10 +138,10 @@ func (c *Counter) fastLineCounter(path string) {
 	}()
 }
 
-func countNonBlankLines(path string) int {
+func countNonBlankLines(path string) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return 0
+		return 0, err
 	}
 	defer file.Close()
 
@@ -145,15 +151,22 @@ func countNonBlankLines(path string) int {
 
 	lineCounter := 0
 	for scanner.Scan() {
-		line := scanner.Text()
-		trimmed := strings.TrimSpace(line)
-		if len(trimmed) == 0 {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Skip empty lines
+		if line == "" {
 			continue
 		}
-		if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "/*") {
+		// Skip comment lines (common in many programming languages)
+		if strings.HasPrefix(line, "//") || strings.HasPrefix(line, "#") || strings.HasPrefix(line, "--") {
 			continue
 		}
 		lineCounter++
 	}
-	return lineCounter
+
+	if err := scanner.Err(); err != nil {
+		return 0, err
+	}
+
+	return lineCounter, nil
 }

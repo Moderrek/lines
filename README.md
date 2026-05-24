@@ -45,6 +45,8 @@ Options:
         Show only the top N extensions by line count
   -no-color
         Disable colorized output
+  -json
+        Output results in JSON format
   -version
         Print version information and exit
   -help
@@ -53,21 +55,27 @@ Options:
 
 ### Example
 
-To analyze the directory `~/projects/my-app` and dispaly the top 5 extensions:
+To analyze the directory `~/projects/my-app` and display the top 5 extensions:
 
 ```shell
 lines --dir ~/projects/my-app --top 5
 ```
 
-Example output:
-```
-Analyzing.. ~/projects/my-app
+To get the output in JSON format, which can be piped to other tools like `jq`:
 
-1. .java | Lines of code: 24304
-2. .json | Lines of code: 8828
-3. .yaml | Lines of code 4980
-4. .tsx  | Lines of code: 4290
-5. .yml  | Lines of code: 1122
+```shell
+lines --dir ~/projects/my-app --json
+```
+
+Example output (`--json`):
+```json
+{
+  ".css": 1122,
+  ".go": 15230,
+  ".html": 4357,
+  ".js": 8828,
+  ".mod": 4980
+}
 ```
 
 ## Library Usage
