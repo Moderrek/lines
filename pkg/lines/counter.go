@@ -1,39 +1,74 @@
 package lines
 
 import (
+	"fmt"
+	"os"
+	"runtime"
 	"sync"
-
-	cmap "github.com/orcaman/concurrent-map/v2"
 )
-
-// TODO: migrate from cmap to stdlib map
-// TODO: create workers pool
 
 // Counter analyzes directories and counts non-blank lines of code.
 type Counter struct {
-	config  Config
-	lines   cmap.ConcurrentMap[string, int]
-	workers sync.WaitGroup
+	config Config
+
+	linesLock sync.Mutex
+	lines     map[string]int
+
+	workers        sync.WaitGroup
+	filesToAnalyze chan string
 }
 
 // NewCounter creates a new Counter with the given configuration.
 // If IgnoredDirs or IgnoredExtensions are empty, sensible defaults are used.
-func NewCounter(config Config) *Counter {
-	if len(config.IgnoredDirs) == 0 {
-		config.IgnoredDirs = DefaultIgnoredDirs()
+func NewCounter(cfg Config) *Counter {
+	if len(cfg.IgnoredDirs) == 0 {
+		cfg.IgnoredDirs = DefaultIgnoredDirs()
 	}
-	if len(config.IgnoredExtensions) == 0 {
-		config.IgnoredExtensions = DefaultIgnoredExtensions()
+	if len(cfg.IgnoredExtensions) == 0 {
+		cfg.IgnoredExtensions = DefaultIgnoredExtensions()
 	}
-	if config.BufferInitialSize == 0 {
-		config.BufferInitialSize = 64 * 1024
+	if cfg.BufferInitialSize == 0 {
+		cfg.BufferInitialSize = 64 * 1024
 	}
-	if config.BufferMaxSize == 0 {
-		config.BufferMaxSize = 1024 * 1024
+	if cfg.BufferMaxSize == 0 {
+		cfg.BufferMaxSize = 1024 * 1024
+	}
+	if cfg.NumWorkers <= 0 {
+		cfg.NumWorkers = runtime.NumCPU() * 2
 	}
 
 	return &Counter{
-		config: config,
-		lines:  cmap.New[int](),
+		config: cfg,
+		lines:  make(map[string]int),
 	}
+}
+
+// Run analyzes the given directory and returns the results.
+// It recursively walks the directory tree using goroutines for performance.
+func (c *Counter) Run(dir string) (*Result, error) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("directory %q does not exist", dir)
+	}
+
+	numWorkers := c.config.NumWorkers
+	c.filesToAnalyze = make(chan string, numWorkers*4)
+
+	for i := 0; i < numWorkers; i++ {
+		c.workers.Add(1)
+		go c.worker()
+	}
+
+	c.walkDir(dir)
+	close(c.filesToAnalyze)
+	c.workers.Wait()
+
+	return &Result{
+		LinesByExtension: c.lines,
+	}, nil
+}
+
+func (c *Counter) addLineCount(ext string, count int) {
+	c.linesLock.Lock()
+	c.lines[ext] += count
+	c.linesLock.Unlock()
 }

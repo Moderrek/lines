@@ -1,71 +1,38 @@
 package lines
 
 import (
-	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 )
 
-// walkDir recursively walks the directory tree and counts lines in files.
-// It spawns goroutines for each subdirectory to achieve parallel processing.
+// walkDir recursively walks the directory tree and enqueues files for the worker pool to analyze.
 func (c *Counter) walkDir(dir string) {
-	defer c.workers.Done()
-
-	filepath.WalkDir(dir, c.walkFn(dir))
-}
-
-func (c *Counter) walkFn(root string) fs.WalkDirFunc {
-	return func(path string, d fs.DirEntry, err error) error {
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return c.handleWalkError(path, err)
+			return nil
 		}
 
 		if d.IsDir() {
-			return c.handleDirectory(root, path)
+			if path == dir {
+				return nil
+			}
+			name := d.Name()
+			if !c.config.IncludeHidden && strings.HasPrefix(name, ".") {
+				return filepath.SkipDir
+			}
+			if c.isIgnoredDir(name) {
+				return filepath.SkipDir
+			}
+			return nil
 		}
 
-		return c.handleFile(path, d)
-	}
-}
+		if d.Type().IsRegular() && c.needToAnalyze(path) {
+			c.filesToAnalyze <- path
+		}
 
-func (c *Counter) handleWalkError(path string, err error) error {
-	fmt.Fprintf(os.Stderr, "error: cannot read %q: %v\n", path, err)
-	return err
-}
-
-func (c *Counter) handleDirectory(root string, path string) error {
-	if path == root {
 		return nil
-	}
-
-	name := filepath.Base(path)
-
-	if !c.config.IncludeHidden && strings.HasPrefix(name, ".") {
-		return filepath.SkipDir
-	}
-
-	if c.isIgnoredDir(name) {
-		return filepath.SkipDir
-	}
-
-	c.workers.Add(1)
-	go c.walkDir(path)
-
-	return filepath.SkipDir
-}
-
-func (c *Counter) handleFile(path string, d fs.DirEntry) error {
-	if !d.Type().IsRegular() {
-		return nil
-	}
-
-	if c.needToAnalyze(path) {
-		c.countLinesInFile(path)
-	}
-
-	return nil
+	})
 }
 
 // needToAnalyze determines if a file should be analyzed.
