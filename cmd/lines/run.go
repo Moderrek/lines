@@ -34,11 +34,12 @@ func run(stdout, stderr io.Writer, args []string) error {
 
 	startTime := time.Now()
 	if isTerminal && !opts.json {
-		fmt.Fprintf(stderr, "Analyzing ... %s\n\n", opts.dir)
+		fmt.Fprintf(stderr, "Analyzing ...\n")
 	}
 
 	config := lines.Config{
 		IncludeHidden: opts.hidden,
+		NumWorkers:    int(opts.jobs),
 	}
 	counter := lines.NewCounter(config)
 	result, err := counter.Run(opts.dir)

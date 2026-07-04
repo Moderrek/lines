@@ -42,7 +42,7 @@ func printHumanOutput(w io.Writer, result *lines.Result, opts *cliOptions) {
 		}
 
 		extColor.Fprintf(w, "%s", key)
-		fmt.Fprint(w, " ") // Separator
+		fmt.Fprint(w, "\t")
 		linesColor.Fprintf(w, "%d\n", linesCount)
 	}
 }

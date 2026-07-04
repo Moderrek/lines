@@ -14,6 +14,7 @@ type cliOptions struct {
 	noColor bool
 	color   bool
 	json    bool
+	jobs    uint
 }
 
 func parseFlags(stderr io.Writer, args []string) (*cliOptions, *flag.FlagSet, error) {
@@ -27,6 +28,7 @@ func parseFlags(stderr io.Writer, args []string) (*cliOptions, *flag.FlagSet, er
 	fs.BoolVar(&opts.help, "help", false, "Print the help message and exit")
 	fs.BoolVar(&opts.hidden, "hidden", false, "Allows to analyze hidden files")
 	fs.UintVar(&opts.top, "top", 0, "Print the top N extensions")
+	fs.UintVar(&opts.jobs, "jobs", 0, "Specifies the number of jobs")
 	fs.BoolVar(&opts.noColor, "no-color", false, "Disable color output")
 	fs.BoolVar(&opts.color, "color", false, "Force color output (e.g. when piping)")
 	fs.BoolVar(&opts.json, "json", false, "Output results in JSON format")
