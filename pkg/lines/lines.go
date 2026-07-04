@@ -44,10 +44,10 @@ type Counter struct {
 func NewCounter(config Config) *Counter {
 	// Use sensible defaults if lists are empty.
 	if len(config.IgnoredDirs) == 0 {
-		config.IgnoredDirs = defaultIgnoredDirs()
+		config.IgnoredDirs = DefaultIgnoredDirs()
 	}
 	if len(config.IgnoredExtensions) == 0 {
-		config.IgnoredExtensions = defaultIgnoredExtensions()
+		config.IgnoredExtensions = DefaultIgnoredExtensions()
 	}
 	if config.BufferInitialSize == 0 {
 		config.BufferInitialSize = 64 * 1024
@@ -59,38 +59,6 @@ func NewCounter(config Config) *Counter {
 	return &Counter{
 		config: config,
 		lines:  cmap.New[int](),
-	}
-}
-
-// defaultIgnoredDirs returns default directories to ignore.
-func defaultIgnoredDirs() []string {
-	return []string{
-		"node_modules", "vendor", ".git", "target",
-	}
-}
-
-// defaultIgnoredExtensions returns default file extensions to ignore.
-func defaultIgnoredExtensions() []string {
-	return []string{
-		".exe", ".dll", ".so", ".dylib",
-		".zip", ".tar", ".gz", ".bz2", ".xz",
-		".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".ico",
-		".mp3", ".wav", ".flac", ".ogg", ".aac",
-		".mp4", ".mkv", ".avi", ".mov", ".wmv",
-		".pdf", ".doc", ".docx", ".xls", ".xlsx",
-		".icns", ".ttf", ".otf", ".woff", ".woff2",
-		".eot", ".svgz", ".uasset", ".plist",
-		".url", ".pbxproj", ".sln",
-		".vcxproj", ".csproj", ".vcproj", ".tlog",
-		".tmp", ".filters", ".idb", ".lock", ".rc",
-		".sqlite", ".gdb", ".node", ".rmeta",
-		".rlib", ".mcmeta", ".iml", ".map", ".natvis",
-		".d", ".dat_old", ".storyboard", ".ilk", ".ppt",
-		".pptx", ".odt", ".ods", ".odp", ".odg", ".mca",
-		".psd", ".bin", ".jar", ".pdb", ".dox", ".db",
-		".schem", ".lnk", ".mod", ".lib", ".o", ".obj",
-		".a", ".class", ".pyc", ".pyo", ".whl", ".log",
-		".in", ".dat", ".TAG", ".repositories", ".MF",
 	}
 }
 
