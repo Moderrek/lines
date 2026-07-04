@@ -18,13 +18,14 @@ type cliOptions struct {
 
 func parseFlags(stderr io.Writer, args []string) (*cliOptions, *flag.FlagSet, error) {
 	opts := &cliOptions{}
-	fs := flag.NewFlagSet("lines", flag.ContinueOnError)
+	fs := flag.NewFlagSet(PROGRAM_NAME, flag.ContinueOnError)
 	fs.SetOutput(stderr)
 
 	fs.StringVar(&opts.dir, "dir", ".", "The directory to analyze")
 	fs.BoolVar(&opts.version, "version", false, "Print the version and exit")
+	fs.BoolVar(&opts.version, "v", false, "Print the version and exit")
 	fs.BoolVar(&opts.help, "help", false, "Print the help message and exit")
-	fs.BoolVar(&opts.hidden, "hidden", false, "Allows to analize hidden files")
+	fs.BoolVar(&opts.hidden, "hidden", false, "Allows to analyze hidden files")
 	fs.UintVar(&opts.top, "top", 0, "Print the top N extensions")
 	fs.BoolVar(&opts.noColor, "no-color", false, "Disable color output")
 	fs.BoolVar(&opts.color, "color", false, "Force color output (e.g. when piping)")

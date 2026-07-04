@@ -22,19 +22,19 @@ func run(stdout, stderr io.Writer, args []string) error {
 	color.NoColor = !useColor
 
 	if opts.version {
-		fmt.Fprintln(stdout, "Lines version 1.2.0 created by @Moderrek")
+		fmt.Printf("%s version %s created by %s\n", PROGRAM_NAME, VERSION, AUTHOR)
 		return nil
 	}
 
 	if opts.help {
-		fmt.Fprintln(stderr, "Usage: lines [options]")
+		fmt.Fprintf(stderr, "Usage: %s [options]\n", PROGRAM_NAME)
 		fs.PrintDefaults()
 		return nil
 	}
 
 	startTime := time.Now()
 	if isTerminal && !opts.json {
-		fmt.Fprintf(stderr, "Analyzing.. %s\n\n", opts.dir)
+		fmt.Fprintf(stderr, "Analyzing ... %s\n\n", opts.dir)
 	}
 
 	config := lines.Config{
