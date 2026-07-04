@@ -18,7 +18,7 @@ type Config struct {
 	// IgnoredDirs are directories to skip during analysis. Defaults to ["node_modules", "vendor", ".git", "target"].
 	IgnoredDirs []string
 	// IgnoredExtensions are file extensions to skip. Defaults to common binary and media formats.
-	IgnoredExtensions []string
+	IgnoredExtensions map[string]struct{}
 	// BufferInitialSize is the initial buffer size for the scanner. Defaults to 64KB.
 	BufferInitialSize int
 	// BufferMaxSize is the maximum buffer size for the scanner. Defaults to 1MB.
@@ -72,16 +72,11 @@ func (c *Counter) isIgnoredDir(dirname string) bool {
 	return false
 }
 
-// isIgnoredExtension checks if a file extension should be ignored.
+// isIgnoredExtension checks if a file extension should be ignored for line counting.
 // The comparison is case-insensitive.
 func (c *Counter) isIgnoredExtension(ext string) bool {
-	ext = strings.ToLower(ext)
-	for _, ignored := range c.config.IgnoredExtensions {
-		if ext == strings.ToLower(ignored) {
-			return true
-		}
-	}
-	return false
+	_, ok := c.config.IgnoredExtensions[strings.ToLower(ext)]
+	return ok
 }
 
 // Run analyzes the given directory and returns the results.
