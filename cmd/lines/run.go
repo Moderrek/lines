@@ -27,7 +27,7 @@ func run(stdout, stderr io.Writer, args []string) error {
 	}
 
 	if opts.help {
-		fmt.Fprintf(stderr, "Usage: %s [options]\n", PROGRAM_NAME)
+		fmt.Printf("Usage: %s [options]\n", PROGRAM_NAME)
 		fs.PrintDefaults()
 		return nil
 	}

@@ -27,7 +27,7 @@ func (c *Counter) walkDir(dir string) {
 			return nil
 		}
 
-		if d.Type().IsRegular() && c.needToAnalyze(path) {
+		if d.Type().IsRegular() && c.needToAnalyze(path, d.Name()) {
 			c.filesToAnalyze <- path
 		}
 
@@ -38,8 +38,8 @@ func (c *Counter) walkDir(dir string) {
 // needToAnalyze determines if a file should be analyzed.
 // Returns false if the file is hidden (when IncludeHidden is false),
 // has no extension, or has an ignored extension.
-func (c *Counter) needToAnalyze(path string) bool {
-	if !c.config.IncludeHidden && filepath.Base(path)[0] == '.' {
+func (c *Counter) needToAnalyze(path, filename string) bool {
+	if !c.config.IncludeHidden && filename[0] == '.' {
 		return false
 	}
 

@@ -21,10 +21,12 @@ func printJSONOutput(w io.Writer, result *lines.Result) error {
 
 func printHumanOutput(w io.Writer, result *lines.Result, opts *cliOptions) {
 	lineMap := result.LinesByExtension
+
 	sortedKeys := make([]string, 0, len(lineMap))
 	for key := range lineMap {
 		sortedKeys = append(sortedKeys, key)
 	}
+
 	sort.Slice(sortedKeys, func(i, j int) bool {
 		return lineMap[sortedKeys[i]] > lineMap[sortedKeys[j]]
 	})
@@ -36,6 +38,7 @@ func printHumanOutput(w io.Writer, result *lines.Result, opts *cliOptions) {
 		if opts.top > 0 && uint(i) >= opts.top {
 			break
 		}
+
 		linesCount := lineMap[key]
 		if linesCount == 0 {
 			continue
