@@ -28,6 +28,7 @@ func (c *Counter) walkDir(dir string) {
 		}
 
 		if d.Type().IsRegular() && c.needToAnalyze(path, d.Name()) {
+			c.FilesFound.Add(1)
 			c.filesToAnalyze <- path
 		}
 

@@ -15,8 +15,8 @@ func printJSONOutput(w io.Writer, result *lines.Result) error {
 	if err != nil {
 		return fmt.Errorf("error generating JSON: %w", err)
 	}
-	fmt.Fprintln(w, string(jsonOutput))
-	return nil
+	_, err = fmt.Fprintln(w, string(jsonOutput))
+	return err
 }
 
 func printHumanOutput(w io.Writer, result *lines.Result, opts *cliOptions) {

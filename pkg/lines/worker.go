@@ -12,6 +12,7 @@ func (c *Counter) worker() {
 
 	for path := range c.filesToAnalyze {
 		lineCount, err := countNonBlankLines(path, c.config.BufferInitialSize, c.config.BufferMaxSize)
+		c.FilesProcessed.Add(1)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "warn: failed to count lines in %q: %v\n", path, err)
 			continue

@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"sync/atomic"
 )
 
 // Counter analyzes directories and counts non-blank lines of code.
@@ -16,6 +17,9 @@ type Counter struct {
 
 	workers        sync.WaitGroup
 	filesToAnalyze chan string
+
+	FilesFound     atomic.Int64
+	FilesProcessed atomic.Int64
 }
 
 // NewCounter creates a new Counter with the given configuration.
