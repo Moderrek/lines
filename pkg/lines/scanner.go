@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -23,34 +24,53 @@ func countNonBlankLines(path string, bufferInitialSize, bufferMaxSize int) (int,
 		}
 	}()
 
-	scanner := bufio.NewScanner(file)
-	buffer := make([]byte, 0, bufferInitialSize)
-	scanner.Buffer(buffer, bufferMaxSize)
+	var r *bufio.Reader
+	if bufferInitialSize > 0 {
+		r = bufio.NewReaderSize(file, bufferInitialSize)
+	} else {
+		r = bufio.NewReader(file)
+	}
 
 	commentDoubleSlash := []byte("//")
 	commentHash := []byte("#")
 	commentDoubleDash := []byte("--")
 
 	lineCount := 0
+	isInsideLongLine := false
 
-	for scanner.Scan() {
-		line := bytes.TrimSpace(scanner.Bytes())
+	for {
+		line, isPrefix, err := r.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return 0, err
+		}
+
+		if isInsideLongLine {
+			if !isPrefix {
+				isInsideLongLine = false
+			}
+			continue
+		}
+
+		if isPrefix {
+			isInsideLongLine = true
+		}
+
+		cleaned := bytes.TrimSpace(line)
 
 		// Skip empty lines.
-		if len(line) == 0 {
+		if len(cleaned) == 0 {
 			continue
 		}
 
 		// Skip comment lines: //, #, or --.
-		if bytes.HasPrefix(line, commentDoubleSlash) || bytes.HasPrefix(line, commentHash) || bytes.HasPrefix(line, commentDoubleDash) {
+		if bytes.HasPrefix(cleaned, commentDoubleSlash) || bytes.HasPrefix(cleaned, commentHash) || bytes.HasPrefix(cleaned, commentDoubleDash) {
 			continue
 		}
 
 		lineCount++
-	}
-
-	if err := scanner.Err(); err != nil {
-		return 0, err
 	}
 
 	return lineCount, nil
