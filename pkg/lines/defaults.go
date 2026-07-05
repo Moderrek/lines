@@ -3,19 +3,22 @@ package lines
 import "strings"
 
 // DefaultIgnoredDirs returns slice of default directories to ignore.
-func DefaultIgnoredDirs() []string {
-	return []string{
-		"node_modules", "vendor", ".git", "target",
+func DefaultIgnoredDirs() map[string]struct{} {
+	return map[string]struct{}{
+		"node_modules": {},
+		"vendor":       {},
+		".git":         {},
+		"target":       {},
 	}
 }
 
 // DefaultIgnoredExtensions returns set of default file extensions to ignore.
 func DefaultIgnoredExtensions() map[string]struct{} {
 	return makeExtensionSet(
-		"exe", "dll", "so", "dylib",
+		"exe", "dll", "so", "dylib", "msi", "mui", "mun",
 		"zip", "tar", "gz", "bz2", "xz",
 		"jpg", "jpeg",
-		"png",
+		"png", "dng", "heic",
 		"gif", "bmp", "webp", "svg", "ico",
 		"mp3", "wav", "flac", "ogg", "aac",
 		"mp4", "mkv", "avi", "mov", "wmv",

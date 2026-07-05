@@ -8,12 +8,12 @@ import (
 	"os"
 )
 
-// countNonBlankLines reads a file and counts non-blank, non-comment lines.
+// analyzeFile reads a file and counts non-blank, non-comment lines.
 // Lines starting with '//', '#' or '--' are treated as comments and skipped.
 // path specifies the file path to count non-blank lines.
 // bufferInitialSize specifies the initial scanner buffer size.
 // bufferMaxSize specifies the maximum scanner buffer size.
-func countNonBlankLines(path string, bufferInitialSize, bufferMaxSize int) (int, error) {
+func analyzeFile(path string, readerInitialBufferSize int) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return 0, err
@@ -25,8 +25,8 @@ func countNonBlankLines(path string, bufferInitialSize, bufferMaxSize int) (int,
 	}()
 
 	var r *bufio.Reader
-	if bufferInitialSize > 0 {
-		r = bufio.NewReaderSize(file, bufferInitialSize)
+	if readerInitialBufferSize > 0 {
+		r = bufio.NewReaderSize(file, readerInitialBufferSize)
 	} else {
 		r = bufio.NewReader(file)
 	}

@@ -36,6 +36,7 @@ func run(stdout, stderr io.Writer, args []string) error {
 	}
 
 	config := lines.Config{
+		Verbose:       opts.verbose,
 		IncludeHidden: opts.hidden,
 		NumWorkers:    int(opts.jobs),
 	}

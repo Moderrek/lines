@@ -15,6 +15,7 @@ type cliOptions struct {
 	color   bool
 	json    bool
 	jobs    uint
+	verbose bool
 }
 
 func parseFlags(stderr io.Writer, args []string) (*cliOptions, *flag.FlagSet, error) {
@@ -32,6 +33,7 @@ func parseFlags(stderr io.Writer, args []string) (*cliOptions, *flag.FlagSet, er
 	fs.BoolVar(&opts.noColor, "no-color", false, "Disable color output")
 	fs.BoolVar(&opts.color, "color", false, "Force color output (e.g. when piping)")
 	fs.BoolVar(&opts.json, "json", false, "Output results in JSON format")
+	fs.BoolVar(&opts.verbose, "verbose", false, "Verbose output")
 
 	err := fs.Parse(args[1:])
 	if err != nil {
