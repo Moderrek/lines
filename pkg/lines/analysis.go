@@ -36,7 +36,7 @@ func analyzeFile(path string, readerInitialBufferSize int) (int, error) {
 			if err == io.EOF {
 				break
 			}
-			return 0, err
+			return 0, fmt.Errorf("failed to analyze %q: readLine: %v\n", filepath.ToSlash(path), err)
 		}
 
 		if len(line) == 0 {
