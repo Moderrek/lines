@@ -13,10 +13,8 @@
 
 </div>
 
-A concurrent, non-blank line counter for source code directories, written in GO.
-
+A concurrent non-blank line counter for source code directories, written in Go.
 It recursively walks a directory, concurrently analyzes files, and reports the number of non-blank lines of code, grouped by file extension.
-
 The tool is designed for performance, utilizing goroutines to process files in parallel.
 
 ## Installation
@@ -37,20 +35,24 @@ The `lines` command accepts the following flags:
 Usage: lines [options]
 
 Options:
-  -dir string
-        The directory to analyze (default ".")
-  -hidden
-        Include hidden files and directories in the analysis
-  -top uint
-        Show only the top N extensions by line count
+  -color
+        Force color output (e.g. when piping)
   -no-color
-        Disable colorized output
+        Disable color output
+  -help
+        Print the help message
+  -hidden
+        Allows to analyze hidden files
+  -jobs uint
+        Specifies the number of jobs
   -json
         Output results in JSON format
+  -top uint
+        Print the top N extensions
+  -verbose
+        Verbose output
   -version
-        Print version information and exit
-  -help
-        Show this help message and exit
+        Print the version
 ```
 
 ### Example
@@ -58,23 +60,23 @@ Options:
 To analyze the directory `~/projects/my-app` and display the top 5 extensions:
 
 ```shell
-lines --dir ~/projects/my-app --top 5
+lines --top 5 ~/projects/my-app
 ```
 
 To get the output in JSON format, which can be piped to other tools like `jq`:
 
 ```shell
-lines --dir ~/projects/my-app --json
+lines --json ~/projects/my-app
 ```
 
 Example output (`--json`):
 ```json
 {
-  ".css": 1122,
-  ".go": 15230,
-  ".html": 4357,
-  ".js": 8828,
-  ".mod": 4980
+    ".css": 1122,
+    ".go": 15230,
+    ".html": 4357,
+    ".js": 8828,
+    ".mod": 4980
 }
 ```
 
@@ -126,8 +128,14 @@ You can customize which directories and file extensions to ignore:
 ```go
 config := lines.Config{
 	IncludeHidden: false,
-	IgnoredDirs: []string{"node_modules", "vendor", ".git", "target", "dist"},
-	IgnoredExtensions: []string{".exe", ".dll", ".jpg", ".png"},
+	IgnoredDirs: map[string]struct{}{
+		"node_modules": {},
+		".git":         {},
+	},
+	IgnoredExtensions: map[string]struct{}{
+		".exe": {},
+		".env": {},
+	},
 }
 counter := lines.NewCounter(config)
 result, err := counter.Run("./src")
@@ -154,4 +162,4 @@ If `IgnoredDirs` or `IgnoredExtensions` are not provided, the library uses sensi
 ## License
 
 This project is licensed under the MIT License.
-See the [LICENSE](LICENSE) file for details.
+See the [LICENSE](./LICENSE) file for details.
