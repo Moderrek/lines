@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 // analyzeFile reads a file and counts non-blank, non-comment lines.
@@ -16,30 +17,21 @@ import (
 func analyzeFile(path string, readerInitialBufferSize int) (int, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to analyze %q: %v", filepath.ToSlash(path), err)
 	}
+
 	defer func() {
 		if err := file.Close(); err != nil {
-			fmt.Fprintf(os.Stderr, "warn: failed to close file %q: %v\n", path, err)
+			fmt.Fprintf(os.Stderr, "warn: failed to close file %q: %v\n", filepath.ToSlash(path), err)
 		}
 	}()
 
-	var r *bufio.Reader
-	if readerInitialBufferSize > 0 {
-		r = bufio.NewReaderSize(file, readerInitialBufferSize)
-	} else {
-		r = bufio.NewReader(file)
-	}
-
-	commentDoubleSlash := []byte("//")
-	commentHash := []byte("#")
-	commentDoubleDash := []byte("--")
-
+	reader := newReader(file, readerInitialBufferSize)
 	lineCount := 0
 	isInsideLongLine := false
 
 	for {
-		line, isPrefix, err := r.ReadLine()
+		line, err := readLine(reader, path, &isInsideLongLine)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -47,26 +39,11 @@ func analyzeFile(path string, readerInitialBufferSize int) (int, error) {
 			return 0, err
 		}
 
-		if isInsideLongLine {
-			if !isPrefix {
-				isInsideLongLine = false
-			}
+		if len(line) == 0 {
 			continue
 		}
 
-		if isPrefix {
-			isInsideLongLine = true
-		}
-
-		cleaned := bytes.TrimSpace(line)
-
-		// Skip empty lines.
-		if len(cleaned) == 0 {
-			continue
-		}
-
-		// Skip comment lines: //, #, or --.
-		if bytes.HasPrefix(cleaned, commentDoubleSlash) || bytes.HasPrefix(cleaned, commentHash) || bytes.HasPrefix(cleaned, commentDoubleDash) {
+		if isCommentLine(line) {
 			continue
 		}
 
@@ -74,4 +51,43 @@ func analyzeFile(path string, readerInitialBufferSize int) (int, error) {
 	}
 
 	return lineCount, nil
+}
+
+func readLine(reader *bufio.Reader, path string, isInsideLongLine *bool) ([]byte, error) {
+	line, isPrefix, err := reader.ReadLine()
+	if err != nil {
+		if err == io.EOF {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to analyze %q: %v", filepath.ToSlash(path), err)
+	}
+
+	if *isInsideLongLine {
+		if !isPrefix {
+			*isInsideLongLine = false
+		}
+		return nil, nil
+	}
+
+	if isPrefix {
+		*isInsideLongLine = true
+	}
+
+	trimmedLine := bytes.TrimSpace(line)
+	return trimmedLine, nil
+}
+
+func isCommentLine(line []byte) bool {
+	doubleSlash := []byte("//")
+	hash := []byte("#")
+	doubleDash := []byte("--")
+
+	return bytes.HasPrefix(line, doubleSlash) || bytes.HasPrefix(line, hash) || bytes.HasPrefix(line, doubleDash)
+}
+
+func newReader(file *os.File, initialBufferSize int) *bufio.Reader {
+	if initialBufferSize > 0 {
+		return bufio.NewReaderSize(file, initialBufferSize)
+	}
+	return bufio.NewReader(file)
 }

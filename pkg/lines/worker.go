@@ -13,16 +13,20 @@ func (c *Counter) analyzeFilesWorker() {
 	for path := range c.filesToAnalyze {
 		lineCount, err := analyzeFile(path, c.Config.ReaderInitialBufferSize)
 		c.FilesProcessed.Add(1)
+
 		if err != nil {
+			// logs the error and continues processing other files.
 			fmt.Fprintf(os.Stderr, "warn: failed to count lines in %q: %v\n", filepath.ToSlash(path), err)
 			continue
 		}
 
-		if lineCount > 0 {
-			ext := strings.ToLower(filepath.Ext(path))
-			c.addLineCount(ext, lineCount)
-			c.logVerbosef("file %q had %d lines", filepath.ToSlash(path), lineCount)
-
+		if lineCount <= 0 {
+			// file is empty.
+			continue
 		}
+
+		ext := strings.ToLower(filepath.Ext(path))
+		c.addLineCount(ext, lineCount)
+		c.logVerbosef("file %q had %d lines", filepath.ToSlash(path), lineCount)
 	}
 }
